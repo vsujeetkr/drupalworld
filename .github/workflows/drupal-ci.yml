@@ -1,0 +1,74 @@
+name: Drupal CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Drupal project
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download code
+        uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: curl, dom, gd, mbstring, pdo_mysql, xml, zip
+          tools: composer:v2
+
+      - name: Show PHP and Composer versions
+        run: |
+          php --version
+          composer --version
+
+      - name: Validate Composer files
+        run: composer validate --strict
+
+      - name: Download Drupal core and modules
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Check PHP syntax
+        shell: bash
+        run: |
+          for directory in web/modules/custom web/themes/custom web/profiles/custom; do
+            if [ -d "$directory" ]; then
+              find "$directory" -type f -name "*.php" -print0 | xargs -0 -r -n1 php -l
+            fi
+          done
+
+      - name: Check Drupal coding standards
+        shell: bash
+        run: |
+          paths=()
+
+          if [ -d "web/modules/custom" ]; then
+            paths+=("web/modules/custom")
+          fi
+
+          if [ -d "web/themes/custom" ]; then
+            paths+=("web/themes/custom")
+          fi
+
+          if [ -d "web/profiles/custom" ]; then
+            paths+=("web/profiles/custom")
+          fi
+
+          if [ "${#paths[@]}" -eq 0 ]; then
+            echo "No custom module, theme, or profile found to lint."
+            exit 0
+          fi
+
+          vendor/bin/phpcs --standard=Drupal,DrupalPractice "${paths[@]}"
+
+      - name: Check security advisories
+        run: composer audit
