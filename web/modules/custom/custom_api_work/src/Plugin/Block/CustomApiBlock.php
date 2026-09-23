@@ -10,7 +10,6 @@ use Drupal\Core\Render\Markup;
 /**
  * Provides a API response.
  */
-
 #[Block(
   id: "custom_api_block",
   admin_label: new TranslatableMarkup("Custom API Block"),
