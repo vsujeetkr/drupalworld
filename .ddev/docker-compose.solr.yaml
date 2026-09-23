@@ -1,0 +1,37 @@
+# .ddev# .ddev/docker-compose.solr.yaml
+# version: &#39;3.6&#39;
+
+services:
+  solr:
+    image: ${SOLR_BASE_IMAGE:-solr:9}
+    container_name: ddev-${DDEV_SITENAME}-solr
+    expose:
+      - 8983
+    labels:
+      com.ddev.site-name: ${DDEV_SITENAME}
+      com.ddev.approot: ${DDEV_APPROOT}
+    environment:
+      SOLR_HOST: ddev-${DDEV_SITENAME}-solr
+      SOLR_PORT: 8983
+      SOLR_OPTS: -Djute.maxbuffer=50000000
+      SOLR_MODULES: "extraction,langid,ltr,analysis-extras"
+      VIRTUAL_HOST: ${DDEV_HOSTNAME}
+      HTTP_EXPOSE: 8983:8983
+      HTTPS_EXPOSE: 8943:8983
+    volumes:
+      - .:/mnt/ddev_config
+      - ddev-global-cache:/mnt/ddev-global-cache
+      - ./solr/lib:/opt/solr/modules/ddev/lib
+      - ./solr/conf:/opt/solr/server/solr/configsets/ddev_conf
+      - solr:/var/solr
+    command: ["/mnt/ddev_config/solr/start-solr.sh"]
+
+    # ✅ Healthcheck goes here
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail -s http://localhost:8983/solr/ || exit 1"]
+      interval: 10s
+      retries: 30
+      start_period: 10s
+      timeout: 5s
+volumes:
+  solr:

@@ -1,0 +1,17 @@
+services:
+  custom_work.csv_importer:
+    class: Drupal\custom_work\Service\CsvImporter
+    arguments: ['@entity_type.manager', '@logger.factory']
+
+  custom_work.api_importer:
+    class: Drupal\custom_work\Service\ApiImporter
+    arguments: ['@http_client', '@entity_type.manager', '@logger.factory']
+
+  custom_work.response_subscriber:
+    class: Drupal\custom_work\EventSubscriber\ResponseSubscriber
+    tags:
+      - { name: event_subscriber }
+
+  logger.channel.custom_rest:
+    parent: logger.channel_base
+    arguments: ['custom_rest']

@@ -1,0 +1,16 @@
+openapi: 3.0.3
+
+info:
+  title: Drupal 10 APIs
+  version: 1.0.0
+
+servers:
+  - url: https://drupalworld.ddev.site
+
+paths:
+  /api/v1/users:
+    get:
+      summary: Get Users
+      responses:
+        '200':
+          description: Success

@@ -1,0 +1,7 @@
+custom_work.import_form:
+  path: '/admin/content/bulk-import'
+  defaults:
+    _form: '\Drupal\custom_work\Form\BulkImportForm'
+    _title: 'Bulk Import'
+  requirements:
+    _permission: 'administer bulk import'

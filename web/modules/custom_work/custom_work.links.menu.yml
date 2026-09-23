@@ -1,0 +1,6 @@
+custom_work.import_form:
+  title: 'Bulk Import'
+  description: 'Import data from CSV or external API.'
+  route_name: custom_work.import_form
+  parent: system.admin_content
+  weight: 100

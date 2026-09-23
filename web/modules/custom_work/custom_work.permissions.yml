@@ -1,0 +1,4 @@
+administer bulk import:
+  title: 'Administer Bulk Import'
+  description: 'Import data from CSV or external API.'
+  restrict access: true

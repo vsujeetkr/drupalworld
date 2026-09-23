@@ -1,0 +1,7 @@
+custom_api_work.users:
+  path: '/api/v1/users'
+  defaults:
+    _controller: '\Drupal\custom_api_work\Controller\UserController::getUsers'
+  methods: [GET]
+  requirements:
+    _permission: 'access content'

@@ -1,0 +1,8 @@
+name: 'Custom Work'
+type: module
+description: 'Use this module for all type of custom work'
+package: Custom
+core_version_requirement: ^10 || ^11
+dependencies:
+  - drupal:rest
+  - drupal:serialization
