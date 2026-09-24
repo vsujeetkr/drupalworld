@@ -1,8 +1,10 @@
 name: Drupal CD
 
-# Runs only after the "Drupal CI" workflow finishes, and only proceeds
-# if that run succeeded AND it ran on main. This is what makes deploy
-# conditional on a green CI pipeline, even though it's a separate file.
+# Triggers only after "Drupal CI" (ci.yml) finishes, and only proceeds
+# if that run succeeded. workflow_run itself doesn't support a top-level
+# branch filter combined with workflow name the same way push does in
+# all GitHub versions, so we also double-check the branch explicitly
+# in the job's `if` below, to be safe.
 on:
   workflow_run:
     workflows: ["Drupal CI"]
@@ -11,17 +13,21 @@ on:
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    environment: production
     steps:
-    - name: Deploy to droplet using SSH
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.PRIVATE_KEY }}
-        debug: true
-        script: |
-          cd ${{ secrets.DOCROOT }}
-          git pull
-          robo job:drupal-update
+      - name: Deploy via SSH (git pull + Robo task)
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
+          debug: true
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            git pull origin main
+            vendor/bin/robo job:drupal-update
