@@ -33,18 +33,19 @@ jobs:
           script: |
             cd ${{ secrets.DOCROOT }}
 
-            # 1. FORCE PHP TO IGNORE DEPRECATIONS AT RUNTIME
-            export PHP_OPTIONS="-d error_reporting='E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED'"
-
-            # 2. Start an SSH Agent session and load your unique deploy key
+            # 1. Start an SSH Agent session and load your unique deploy key
             eval "$(ssh-agent -s)"
             ssh-add ~/.ssh/github_deploy_key
 
-            # 3. Inject local project binaries (Drush) and system Composer into the executable PATH
+            # 2. Inject local project binaries (Drush) and system Composer into the executable PATH
             export PATH=$PWD/vendor/bin:/opt/cpanel/composer/bin:$PATH
 
-            # 4. Pull the latest code safely with the active SSH Agent context
+            # 3. Pull the latest code safely with the active SSH Agent context
             git pull origin main
 
-            # 5. Trigger the Drupal deployment update tasks via Robo
-            vendor/bin/robo job:drupal-update
+            # 4. 🚀 Run standard Composer optimizations
+            composer install --no-dev --optimize-autoloader
+
+            # 5. 🚀 Run the Native Drupal Deployment commands (What Robo was doing)
+            drush deploy --yes
+            drush cache-rebuild
