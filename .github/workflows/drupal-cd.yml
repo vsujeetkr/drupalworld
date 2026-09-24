@@ -1,0 +1,69 @@
+name: Drupal CD
+
+# Runs only after the "Drupal CI" workflow finishes, and only proceeds
+# if that run succeeded AND it ran on main. This is what makes deploy
+# conditional on a green CI pipeline, even though it's a separate file.
+on:
+  workflow_run:
+    workflows: ["Drupal CI"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    environment: production
+    steps:
+      - name: Checkout code at the exact commit CI tested
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Download build artifact from the CI run
+        uses: actions/download-artifact@v4
+        with:
+          name: drupal-build-${{ github.event.workflow_run.head_sha }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract artifact
+        run: mkdir -p release && tar -xzf build.tar.gz -C release
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Add server to known_hosts
+        run: ssh-keyscan -p ${{ secrets.DEPLOY_PORT }} -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Put site into maintenance mode
+        run: |
+          ssh -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "cd ${{ secrets.DEPLOY_PATH }} && vendor/bin/drush state:set system.maintenance_mode 1 --root=web || true"
+
+      - name: Rsync build into public_html
+        run: |
+          rsync -az --delete \
+            -e "ssh -p ${{ secrets.DEPLOY_PORT }} -o StrictHostKeyChecking=no" \
+            --exclude='web/sites/default/files' \
+            --exclude='web/sites/default/settings.local.php' \
+            --exclude='web/sites/default/settings.php' \
+            release/ \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/
+
+      - name: Run Drupal deploy commands (drush)
+        run: |
+          ssh -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} bash -s << 'EOF'
+            set -e
+            cd ${{ secrets.DEPLOY_PATH }}
+            vendor/bin/drush deploy -y --root=web
+            vendor/bin/drush state:set system.maintenance_mode 0 --root=web
+          EOF
+
+      - name: Fix file/folder permissions (cPanel/suexec expects 644/755)
+        run: |
+          ssh -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "find ${{ secrets.DEPLOY_PATH }}/web -type d -exec chmod 755 {} \; && find ${{ secrets.DEPLOY_PATH }}/web -type f -exec chmod 644 {} \;"
+
