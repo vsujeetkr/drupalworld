@@ -32,6 +32,13 @@ jobs:
           debug: true
           script: |
             cd ${{ secrets.DOCROOT }}
-            export PATH=$PATH:/usr/local/bin:$HOME/.config/composer/vendor/bin
+
+            # 1. Force Git to use your specific server deployment key
+            export GIT_SSH_COMMAND="ssh -i ~/.ssh/github_deploy_key -o IdentitiesOnly=yes"
             git pull origin main
+
+            # 2. Inject the exact cPanel Composer binary directory into the execution PATH
+            export PATH=/opt/cpanel/composer/bin:$PATH
+
+            # 3. Run the automated update step
             vendor/bin/robo job:drupal-update
