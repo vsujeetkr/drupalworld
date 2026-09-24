@@ -30,12 +30,11 @@ jobs:
                                      # which Go's ssh library only supports under this flag (golang/go#20201)
           script_stop: true
           debug: true
-          command_timeout: 20m
           script: |
             cd ${{ secrets.DOCROOT }}
 
-            # 1. Mute Symfony deprecation warnings from stopping the build
-            export SYMFONY_DEPRECATIONS_HELPER=disabled
+            # 1. FORCE PHP TO IGNORE DEPRECATIONS AT RUNTIME
+            export PHP_OPTIONS="-d error_reporting='E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED'"
 
             # 2. Start an SSH Agent session and load your unique deploy key
             eval "$(ssh-agent -s)"
