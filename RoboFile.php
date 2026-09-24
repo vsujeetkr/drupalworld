@@ -21,7 +21,7 @@ class RoboFile extends \Robo\Tasks
         $collection = $this->collectionBuilder();
         $collection->addTask($this->taskComposerInstall());
         $collection->addTask($this->deploy());
-        $collection->addTask($this->runBuildFrontEnd());
+       // $collection->addTask($this->runBuildFrontEnd());
         $collection->addTask($this->runClearRebuild());
         return $collection->run();
     }
