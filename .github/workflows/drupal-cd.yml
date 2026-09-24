@@ -30,18 +30,22 @@ jobs:
                                      # which Go's ssh library only supports under this flag (golang/go#20201)
           script_stop: true
           debug: true
+          command_timeout: 20m
           script: |
             cd ${{ secrets.DOCROOT }}
 
-            # 1. Start an SSH Agent session and load your unique deploy key
+            # 1. Mute Symfony deprecation warnings from stopping the build
+            export SYMFONY_DEPRECATIONS_HELPER=disabled
+
+            # 2. Start an SSH Agent session and load your unique deploy key
             eval "$(ssh-agent -s)"
             ssh-add ~/.ssh/github_deploy_key
 
-            # 2. Inject local project binaries (Drush) and system Composer into the executable PATH
+            # 3. Inject local project binaries (Drush) and system Composer into the executable PATH
             export PATH=$PWD/vendor/bin:/opt/cpanel/composer/bin:$PATH
 
-            # 3. Pull the latest code safely with the active SSH Agent context
+            # 4. Pull the latest code safely with the active SSH Agent context
             git pull origin main
 
-            # 4. Trigger the Drupal deployment update tasks via Robo
+            # 5. Trigger the Drupal deployment update tasks via Robo
             vendor/bin/robo job:drupal-update
