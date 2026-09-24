@@ -32,5 +32,6 @@ jobs:
           debug: true
           script: |
             cd ${{ secrets.DOCROOT }}
+            export PATH=$PATH:/usr/local/bin:$HOME/.config/composer/vendor/bin
             git pull origin main
             vendor/bin/robo job:drupal-update
