@@ -47,5 +47,7 @@ jobs:
             composer install --no-dev --optimize-autoloader
 
             # 5. 🚀 Run the Native Drupal Deployment commands (What Robo was doing)
-            drush deploy --yes
+            drush updatedb --no-cache-clear --yes
+            drush config:import --yes
+            drush deploy:hook --yes
             drush cache-rebuild
